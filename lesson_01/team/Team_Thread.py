@@ -55,6 +55,9 @@ def main():
     start = 10000000000
     range_count = 100000
     numbers_processed = 0
+
+    
+
     for i in range(start, start + range_count):
         numbers_processed += 1
         if is_prime(i):
