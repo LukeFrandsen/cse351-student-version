@@ -47,7 +47,25 @@ class ATM_Reader():
 # ===========================================================================
 class Account():
     # TODO - implement this class here
-    ...
+    def __init__(self): 
+        self.balance = Money('0')
+        self.lock = threading.Lock()
+
+    def deposit(self, amount:float): 
+        pass
+
+    def withdraw(self, amount:float): 
+        with self.lock:
+            balance = self.get_balance()
+            if balance >= Money(amount):
+                self.balance -= Money(amount)
+                return True
+
+
+
+    def get_balance(self) -> Money:
+        return self.balance
+        
 
 
 # ===========================================================================

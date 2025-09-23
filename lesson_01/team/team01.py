@@ -43,6 +43,12 @@ def is_prime(n):
             return False
         i += 6
     return True
+def process_primes(range_count, start):
+    for i in range(start, start + range_count):
+        numbers_processed += 1
+        if is_prime(i):
+            prime_count += 1
+            print(i, end=', ', flush=True)
 
 
 def main():
@@ -55,11 +61,14 @@ def main():
     start = 10000000000
     range_count = 100000
     numbers_processed = 0
-    for i in range(start, start + range_count):
+
+    for i in range(10):
         numbers_processed += 1
-        if is_prime(i):
-            prime_count += 1
-            print(i, end=', ', flush=True)
+        t = threading.Thread(target=process_primes, args=(range_count / 10, start + (range_count / 10 * i),))
+
+        t.start()
+        t.join()
+
     print(flush=True)
 
     # Should find 4306 primes
