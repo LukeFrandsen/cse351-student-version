@@ -1,10 +1,8 @@
+# /Users/<you>/path/to/assignment02.py
 """
 Course    : CSE 351
 Assignment: 02
 Student   : <your name here>
-
-Instructions:
-    - review instructions in the course
 """
 
 # Don't import any other packages for this assignment
@@ -14,9 +12,8 @@ import threading
 from money import *
 from cse351 import *
 
-# ---------------------------------------------------------------------------
-def main(): 
 
+def main():
     print('\nATM Processing Program:')
     print('=======================\n')
 
@@ -24,22 +21,23 @@ def main():
 
     # Load ATM data files
     data_files = get_filenames('data_files')
-    
+    # debug: print(data_files)
+
     log = Log(show_terminal=True)
     log.start_timer()
 
     bank = Bank()
 
-    # Create and start one thread per ATM file
+    # Start one ATM_Reader thread per data file
     readers = []
-    for file in data_files:
-        reader = ATM_Reader(file, bank)
+    for filepath in data_files:
+        reader = ATM_Reader(filepath, bank)
         readers.append(reader)
         reader.start()
 
-    # Wait for all ATM readers to finish
-    for reader in readers:
-        reader.join()
+    # Wait for them to finish
+    for r in readers:
+        r.join()
 
     test_balances(bank)
 
@@ -48,41 +46,68 @@ def main():
 
 # ===========================================================================
 class ATM_Reader(threading.Thread):
-    """Reads ATM transactions from one file in a separate thread."""
-    def __init__(self, filename:str, bank:'Bank'):
+    """Thread that reads all transactions from one ATM data file and applies them."""
+    def __init__(self, filename: str, bank: 'Bank'):
         super().__init__()
         self.filename = filename
         self.bank = bank
 
     def run(self):
-        with open(self.filename, 'r') as f:
-            for line in f:
-                if line.startswith('#') or line.strip() == '':
-                    continue
-                account_num, trans_type, amount_str = line.strip().split(',')
-                account_num = int(account_num)
-                amount = Money(amount_str)
+        count = 0
+        print(f"[DEBUG] Starting reader for {self.filename}")
+        try:
+            with open(self.filename, 'r') as f:
+                for line in f:
+                    if line.startswith('#') or line.strip() == '':
+                        continue
+                    parts = line.strip().split(',')
+                    if len(parts) != 3:
+                        continue
+                    account_num_s, trans_type, amount_str = parts
+                    try:
+                        account_num = int(account_num_s)
+                    except ValueError:
+                        continue
 
-                if trans_type == 'd':
-                    self.bank.deposit(account_num, amount)
-                elif trans_type == 'w':
-                    self.bank.withdraw(account_num, amount)
+                    # Use Money constructed from the string (data files provide two-decimal strings).
+                    # If your Money implementation expects a different constructor, adjust here.
+                    try:
+                        amount = Money(amount_str)
+                    except Exception:
+                        # Fallback: try converting to float then constructing Money
+                        amount = Money(float(amount_str))
+
+                    # Limited debug prints for the first few transactions in each file
+                    if count < 5:
+                        print(f"[DEBUG] File={os.path.basename(self.filename)}, acct={account_num}, "
+                              f"type={trans_type}, raw={amount_str}, amount={amount}")
+                        count += 1
+
+                    if trans_type == 'd':
+                        self.bank.deposit(account_num, amount)
+                    elif trans_type == 'w':
+                        self.bank.withdraw(account_num, amount)
+        except FileNotFoundError:
+            print(f"[ERROR] File not found: {self.filename}")
 
 
 # ===========================================================================
 class Account:
-    """Represents a bank account with thread-safe operations."""
-    def __init__(self): 
+    """Thread-safe bank account using Money.add()/sub()."""
+    def __init__(self):
         self.balance = Money('0')
         self.lock = threading.Lock()
 
-    def deposit(self, amount:Money):
+    def deposit(self, amount: Money):
+        # use Money.add() because Money does not support +=
         with self.lock:
-            self.balance.add(amount)
+            self.balance = self.balance.add(amount)
 
-    def withdraw(self, amount:Money): 
+    def withdraw(self, amount: Money):
+        # withdrawals allowed to go negative per assignment
         with self.lock:
-            self.balance.sub(amount)
+            self.balance = self.balance.sub(amount)
+
     def get_balance(self) -> Money:
         with self.lock:
             return self.balance
@@ -90,18 +115,18 @@ class Account:
 
 # ===========================================================================
 class Bank:
-    """Manages multiple accounts and provides thread-safe operations."""
+    """Manages numbered accounts (1..20)."""
     def __init__(self):
-        # Accounts 1..20
         self.accounts = {i: Account() for i in range(1, 21)}
 
-    def deposit(self, account_number:int, amount:Money):
+    def deposit(self, account_number: int, amount: Money):
+        # assume account_number is valid per assignment
         self.accounts[account_number].deposit(amount)
 
-    def withdraw(self, account_number:int, amount:Money):
+    def withdraw(self, account_number: int, amount: Money):
         self.accounts[account_number].withdraw(amount)
 
-    def get_balance(self, account_number:int) -> Money:
+    def get_balance(self, account_number: int) -> Money:
         return self.accounts[account_number].get_balance()
 
 
@@ -110,10 +135,15 @@ class Bank:
 def get_filenames(folder):
     """ Don't Change """
     filenames = []
+    if not os.path.isdir(folder):
+        return filenames
     for filename in os.listdir(folder):
         if filename.endswith(".dat"):
             filenames.append(os.path.join(folder, filename))
+    # Keep deterministic ordering
+    filenames.sort()
     return filenames
+
 
 # ---------------------------------------------------------------------------
 def create_data_files_if_needed():
@@ -148,6 +178,7 @@ def create_data_files_if_needed():
                 f.write(f'{account},{trans_type},{amount}\n')
 
     print()
+
 
 # ---------------------------------------------------------------------------
 def test_balances(bank):
