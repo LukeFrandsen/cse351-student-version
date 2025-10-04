@@ -4,7 +4,7 @@ import random
 
 THREADS = 4
 
-def worker(barrier, thread_id):
+def worker(barrier: threading.Barrier, thread_id):
     print(f"Thread {thread_id}: Performing initialization...")
     time.sleep(random.uniform(0.1, 0.5))
 
