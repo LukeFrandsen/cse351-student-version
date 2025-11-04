@@ -51,12 +51,13 @@ class ATM_Reader(threading.Thread):
     """Reads ATM transactions from one file in a separate thread."""
     def __init__(self, filename:str, bank:'Bank'):
         super().__init__()
-        self.filename = filename
-        self.bank = bank
+        self._filename = filename
+        self._bank = bank
 
     def run(self):
-        with open(self.filename, 'r') as f:
-            for line in f:
+        with open(self._filename, 'r') as file:
+            for line in file:
+                line = line.strip()
                 if line.startswith('#') or line.strip() == '':
                     continue
                 account_num, trans_type, amount_str = line.strip().split(',')
@@ -64,9 +65,11 @@ class ATM_Reader(threading.Thread):
                 amount = Money(amount_str)
 
                 if trans_type == 'd':
-                    self.bank.deposit(account_num, amount)
+                    self._bank.deposit(account_num, amount)
                 elif trans_type == 'w':
-                    self.bank.withdraw(account_num, amount)
+                    self._bank.withdraw(account_num, amount)
+                else:
+                    print(f'aaaaaaahhhhhhh: {trans_type}')
 
 
 # ===========================================================================
@@ -94,15 +97,28 @@ class Bank:
     def __init__(self):
         # Accounts 1..20
         self.accounts = {i: Account() for i in range(1, 21)}
+        self.bank_lock = threading.Lock()
 
     def deposit(self, account_number:int, amount:Money):
+        #self._look_Up_Account(account_number).deposit(amount)
         self.accounts[account_number].deposit(amount)
 
     def withdraw(self, account_number:int, amount:Money):
+        #self._look_Up_Account(account_number).withdraw(amount)
         self.accounts[account_number].withdraw(amount)
 
     def get_balance(self, account_number:int) -> Money:
+        #return self._look_Up_Account(account_number).get_balance()
         return self.accounts[account_number].get_balance()
+    
+    def _look_Up_Account(self, account_number:int) -> Account:
+        if account_number in self.accounts:
+            return self.accounts[account_number]
+        with self.bank_lock:
+            if account_number not in self.accounts:
+                self.accounts[account_number] = Account()
+            self.bank_lock.release()
+        return self.accounts[account_number]
 
 
 # ---------------------------------------------------------------------------

@@ -44,11 +44,25 @@ def main():
     start = 10000000000
     range_count = 100000
     numbers_processed = 0
-    for i in range(start, start + range_count):
-        numbers_processed += 1
-        if is_prime(i):
-            prime_count += 1
-            print(i, end=', ', flush=True)
+    prime_count = 0
+    # for i in range(start, start + range_count):
+    #     numbers_processed += 1
+    #     if is_prime(i):
+    #         prime_count += 1
+    #         print(i, end=', ', flush=True)
+    numbers = list(range(start, start + range_count + 1))
+    for pool_size in range(1, mp.cpu_count() + 1):
+        print(f'Pool of {pool_size:2} CPU cores', end='')
+        xaxis_cpus.append(pool_size)
+        with mp.Pool(pool_size) as pool:
+            start_time = time.time()
+            results = pool.map(is_prime, numbers)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            yaxis_times.append(elapsed_time)
+            prime_count = sum(1 for result in results if result)
+            numbers_processed = len(numbers)
+            print(f' took {elapsed_time:.2f} seconds to process {numbers_processed} numbers and found {prime_count} primes')
     print(flush=True)
 
     end_time = time.time()
@@ -56,7 +70,7 @@ def main():
 
     # create plot of results and also save it to a PNG file
     plt.plot(xaxis_cpus, yaxis_times)
-    
+    plt.savefig('team.png')
     plt.title('Time VS CPUs')
     plt.xlabel('CPU Cores')
     plt.ylabel('Seconds')

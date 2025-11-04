@@ -146,6 +146,10 @@ def run_image_processing_pipeline():
     q2 = mp.Queue()
     q3 = mp.Queue()
 
+
+
+
+
     p_load = mp.Process(target=load_images, args=(q1,))
     p1 = mp.Process(target=smooth_worker, args=(q1, q2))
     p2 = mp.Process(target=gray_worker, args=(q2, q3))
