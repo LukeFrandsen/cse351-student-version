@@ -33,10 +33,32 @@ speed = SLOW_SPEED
 def solve_path(maze):
     """ Solve the maze and return the path found between the start and end positions.  
         The path is a list of positions, (x, y) """
-    path = []
-    # TODO: Solve the maze recursively while tracking the correct path.
+    start_row, start_col = maze.get_start_pos()
 
-    # Hint: You can create an inner function to do the recursion
+    def find_path(row, col, path):
+    # Base case — we reached the end
+        if maze.at_end(row, col):
+            maze.move(row, col, (0, 255, 0))  # green for correct path
+            path.append((row, col))
+            return True
+        
+            # Try moving here (mark as part of the path)
+        maze.move(row, col, (0, 255, 0))  # green
+        path.append((row, col))
+
+                    # Explore all possible moves (randomly shuffled by get_possible_moves)
+        for next_row, next_col in maze.get_possible_moves(row, col):
+            if find_path(next_row, next_col, path):
+                return True
+        
+                # If none of the moves worked, mark as visited (gray) and backtrack
+        maze.restore(row, col)
+        path.pop()
+        return False
+
+    path = []
+    find_path(start_row, start_col, path)
+    
 
     return path
 

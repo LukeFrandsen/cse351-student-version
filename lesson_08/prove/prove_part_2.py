@@ -2,7 +2,7 @@
 Course: CSE 351 
 Assignment: 08 Prove Part 2
 File:   prove_part_2.py
-Author: <Add name here>
+Author: Luke Frandsen
 
 Purpose: Part 2 of assignment 8, finding the path to the end of a maze using recursion.
 
@@ -21,11 +21,15 @@ position:
 
 What would be your strategy?
 
-<Answer here>
+I think that to display the found path to the exit position, 
+I would modify the explore function to keep track of the path taken by each thread. 
+Each thread could maintain its own list of positions it has visited. When a thread reaches the end position, 
+it could store its path in a shared data structure (like a list or dictionary) that is accessible to all threads.
 
 Why would it work?
 
-<Answer here>
+This strategy would work because each thread would be responsible for tracking its own path, 
+and when one thread finds the end position, it can share its path with the main program.
 
 """
 
@@ -79,13 +83,46 @@ def get_color():
 
 
 # TODO: Add any function(s) you need, if any, here.
+def explore(maze, row, col, color):
+    global stop
+    global thread_count
+    if stop:
+        return
+    maze.move(row, col, color)
+    if maze.at_end(row, col):
+        stop = True
+        return
+    moves = maze.get_possible_moves(row, col)
+
+    threads = []
+    for next_row, next_col in moves[:-1]:
+        if stop:
+            return
+        new_color = get_color()
+        thread = threading.Thread(target=explore, args=(maze, next_row, next_col, new_color))
+        thread_count += 1
+        thread.start()
+        threads.append(thread)
+
+    if moves and not stop:
+        next_row, next_col = moves[-1]
+        explore(maze, next_row, next_col, color)
+
+    for thread in threads:
+        thread.join()
 
 
 def solve_find_end(maze):
     """ Finds the end position using threads. Nothing is returned. """
     # When one of the threads finds the end position, stop all of them.
     global stop
+    global thread_count
     stop = False
+    thread_count += 1
+    start_row, start_col = maze.get_start_pos()
+    color= get_color()
+    
+    explore(maze, start_row, start_col, color)
 
 
 

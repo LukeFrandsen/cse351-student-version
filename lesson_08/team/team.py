@@ -71,12 +71,38 @@ import threading
 
 PHILOSOPHERS = 5
 MAX_MEALS_EATEN = PHILOSOPHERS * 5 # NOTE: Total meals to be eaten, not per philosopher!
-
+meal_ciounts = [0] * PHILOSOPHERS
 # TODO - Create the Waiter class.
+class Waiter:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.forks = [False] * PHILOSOPHERS
+    def is_available(self, id):
+        with self.lock:
+            left = self.forks[id]
+            right = self.forks[(id + 1) % PHILOSOPHERS]
+            return not left and not right
+    def can_eat(self, id):
+        with self.lock:
+            left = self.forks[id]
+            right = self.forks[(id + 1) % PHILOSOPHERS]
+            if left == False and right == False:
+                self.forks[id] = True
+                self.forks[(id + 1) % PHILOSOPHERS] = True
+                return True
+            else:
+                return False
+class Philosopher(threading.Thread):
+    def __init__(self, id, waiter, philo_lock):
+        threading.Thread.__init__(self)
 
 def main():
+    global meal_counts
     # TODO - Get an instance of the Waiter.
+    waiter = Waiter()
+    meal_lock = threading.Lock()
     # TODO - Create the forks???
+
     # TODO - Create PHILOSOPHERS philosophers.
     # TODO - Start them eating and thinking.
     # TODO - Display how many times each philosopher ate.
