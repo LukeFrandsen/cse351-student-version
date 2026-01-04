@@ -58,8 +58,6 @@ def solve_path(maze):
 
     path = []
     find_path(start_row, start_col, path)
-    
-
     return path
 
 

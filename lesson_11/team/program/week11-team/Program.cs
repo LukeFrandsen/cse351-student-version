@@ -26,7 +26,7 @@ class Program
 {
     private static readonly HttpClient HttpClient = new();
     private const string TopApiUrl = "http://127.0.0.1:8790";
-    
+
     // Makes one URL call to the server
     private static async Task<JObject?> GetDataFromServerAsync(string url)
     {
@@ -41,8 +41,8 @@ class Program
             Console.WriteLine($"Error fetching data from {url}: {e.Message}");
             return null;
         }
-    }    
-    
+    }
+
     // Retrieves all urls from a list of urls
     private static async Task GetUrlsAsync(JObject filmData, string kind)
     {
@@ -53,8 +53,10 @@ class Program
 
         Console.WriteLine(kind.ToUpper());
 
+
         Console.WriteLine($"  Number of urls = {urls.Count}");
-        
+
+        List<Task<JObject?>> tasks = new List<Task<JObject?>>();
         // Loop through each URL sequentially.
         foreach (var url in urls)
         {
@@ -67,12 +69,12 @@ class Program
                 Console.WriteLine($"  - {name}");
             }
         }
-    }    
-    
+    }
+
     static async Task Main()
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         var film6 = await GetDataFromServerAsync($"{TopApiUrl}/films/6");
         Console.WriteLine(film6["director"]);
 
@@ -81,9 +83,9 @@ class Program
         await GetUrlsAsync(film6, "starships");
         await GetUrlsAsync(film6, "vehicles");
         await GetUrlsAsync(film6, "species");
-        
+
         stopwatch.Stop();
-        
+
         // TODO - display the number of calls to the server
 
         Console.WriteLine($"Total execution time: {stopwatch.Elapsed.TotalSeconds:F2} seconds");
